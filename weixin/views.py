@@ -51,19 +51,30 @@ def auto_reply(request):
         msg_type = xml_data.find('MsgType').text
         to_user_name = xml_data.find('ToUserName').text
         from_user_name = xml_data.find('FromUserName').text
-        req_content = xml_data.find('Content').text
-
         to_user = from_user_name
         from_user = to_user_name
-        print('req_content:', req_content)
         if msg_type == 'text':
-            resource_messages = ResourceMessage.objects.filter(resource_code=req_content)
+            req_content = xml_data.find('Content').text
+            resource_messages = None
+            print('req_content:', req_content)
+            if req_content.isdigit():
+                resource_messages = ResourceMessage.objects.filter(resource_code=req_content)
             content = '无效资源，请联系博主处理'
             if resource_messages and len(resource_messages)>0:
                 content = resource_messages[0].resource_name+' '+resource_messages[0].resource_message;
             print(content)
             reply_msg = TextMsg(to_user, from_user, content)
             return reply_msg.send()
+        # 关注和取关的类型是envent
+        elif msg_type == 'event':
+                envent = xml_data.find('Event').text
+                # 关注事件（取消关注的类型是'unsubscribe',这里没有写）
+                if envent == 'subscribe':
+                    content = '''感谢关注"我的Python世界"，在我的Python世界中，从Python基础，Diango，爬虫，在到机器学习...我们一起学习，一起进步。
+                        本公众号正在建设中，后续会逐步完善。
+                    '''
+                    reply_msg = TextMsg(to_user, from_user, content)
+                    return reply_msg.send()
         elif msg_type == 'image':
             content = "图片已收到,谢谢"
             reply_msg = TextMsg(to_user, from_user, content)
